@@ -1,0 +1,42 @@
+applications:
+    cms:
+        menus:
+            tools:subpop:
+                label: PuSH subscribe
+                order: 99999
+                mode: push_subscribe
+        methods:
+            push_subscribe: >
+                sub {
+                    return '<html><head><title>subscribe test</title></head><body>' 
+                        . '<form action="' . $_[0]->app_uri . '" method="POST">'
+                        . '<input type="hidden" name="__mode" value="do_push_subscribe" />'
+                        . 'hub <input type="text" name="hub" />'
+                        . 'topic <input type="text" name="topic" />'
+                        . '<input type="submit" />'
+                        . '</form></body></html>';
+                }
+            do_push_subscribe: >
+                sub {
+                    my $app   = shift;
+                    my $hub   = $app->param('hub');
+                    my $topic = $app->param('topic');
+                    require MT::SubPop::Subscription;
+                    my $res = MT::SubPop::Subscription->subscribe(
+                        author_id => $app->user->id,
+                        hub_url   => $hub,
+                        topic     => $topic,
+                        callback  => 'subpoptest',
+                    );
+                    return $res || MT::SubPop::Subscription->errstr;
+                }
+subpop_callbacks:
+    subpoptest:
+        each_author: 1
+        handler: >
+            sub {
+                my ( $sub, $xml ) = @_;
+                use MT;
+                MT->log('Got PubSubHubbub Update: '. $xml);
+            }
+

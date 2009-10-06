@@ -1,0 +1,16 @@
+name: SubPop
+id: SubPop
+version: 0.1
+schema_version: 0.13
+applications:
+    subpop:
+        handler: MT::App::SubPop
+        methods:
+            subscribe: $SubPop::MT::App::SubPop::subscribe
+            update: $SubPop::MT::App::SubPop::update
+object_types:
+    subpop: MT::SubPop::Subscription
+config_settings:
+    SubPopScript: ~
+    SubPopSecret: ~
+
