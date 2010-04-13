@@ -5,6 +5,10 @@ applications:
                 label: PuSH subscribe
                 order: 99999
                 mode: push_subscribe
+                view:
+                    - system
+                    - blog
+                    - website
         methods:
             push_subscribe: >
                 sub {

@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use base qw( MT::Object );
 use MT;
-use MT::SubPop::Util;
 
 ## Constants
 sub ERROR           { 0 }
@@ -107,13 +106,13 @@ sub _request {
     my ( $mode ) = @_; # subscribe or unsubscribe
     return $self->error( 'Mode was not given.' )
         if !$mode || ($mode ne 'subscribe' && $mode ne 'unsubscribe');
-    my $end_point = MT->config->SubPopScript || ( MT->app->base . MT->config->CGIPath . 'mt-subpop.cgi' );
+    my $end_point = MT->config->SubPopScript || ( MT->app->base . MT->app->path . 'mt-subpop.cgi' );
     my $params = {
         mode         => $mode,
         callback     => $end_point,
         topic        => $self->topic,
         verify       => 'sync',
-        secret       => MT::SubPop::Util::secret(),
+        secret       => MT->config->SubPopPassword,
         verify_token => $self->verify_token,
     };
     my $param = join( '&',
@@ -144,6 +143,11 @@ sub _request {
             $self->hub_url,
     ));
     return 1;
+}
+
+sub generate_token {
+    require Digest::SHA1;
+    return Digest::SHA1::sha1_hex( MT->config->SubPopPassword . time() );
 }
 
 1;

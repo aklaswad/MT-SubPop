@@ -2,8 +2,6 @@ package MT::App::SubPop;
 use strict;
 use MT;
 use base qw( MT::App );
-
-use MT::SubPop::Util;
 use Encode;
 sub id {'subpop'}
 
@@ -84,7 +82,7 @@ sub update {
     my $topic;
     require XML::XPath;
     my $x = XML::XPath->new( xml => $xml );
-    $topic = $x->findvalue( '//feed/link[@rel="http://schemas.google.com/g/2005#feed"]/@href' ); 
+    $topic = $x->findvalue( '//feed/link[@rel="self"]/@href' );
     $topic = "$topic"; # cast from XML::XPath::Scalar to perl scalar.
 
     my @subs = MT->model('subpop')->load({ topic => $topic });
@@ -114,7 +112,7 @@ sub update {
             my $sub = $callbacks{$callback}->[0];
             $func->( $sub, $xml );
         }
-    } 
+    }
     return 1;
 }
 
@@ -123,7 +121,7 @@ sub verify_update {
     my $hubsig = $app->get_header('X-Hub-Signature');
     $hubsig =~ s/^sha1\=//;
     my $body = $app->request_content;
-    my $secret = MT::SubPop::Util::secret;
+    my $secret = MT->config->SubPopPassword;
     require Digest::HMAC_SHA1;
     my $expected = Digest::HMAC_SHA1::hmac_sha1_hex($body, $secret);
     return $hubsig eq $expected ? 1 : 0;

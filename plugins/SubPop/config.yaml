@@ -12,5 +12,17 @@ object_types:
     subpop: MT::SubPop::Subscription
 config_settings:
     SubPopScript: ~
-    SubPopSecret: ~
+    SubPopPassword:
+        handler: |
+            sub {
+                my $cfg = shift;
+                my $secret = $cfg->get_internal('SubPopPassword');
+                return $secret if $secret;
+                require Digest::SHA1;
+                $secret = Digest::SHA1::sha1_hex( MT->app->base . MT->app->path . time() );
+                $cfg->set_internal( 'SubPopPassword', $secret, 1 );
+                $cfg->save_config
+                    or die MT->config->errstr;
+                $secret;
+            }
 
