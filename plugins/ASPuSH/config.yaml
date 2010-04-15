@@ -1,0 +1,7 @@
+callbacks:
+    pre_update_action_streams_filter: $ASPuSH::ASPuSH::stream_filter
+    pre_parse_action_streams_xpath: $ASPuSH::ASPuSH::find_hub_link_from_xml
+subpop_callbacks:
+    aspush:
+        each_author: 1
+        handler: $ASPuSH::ASPuSH::update
