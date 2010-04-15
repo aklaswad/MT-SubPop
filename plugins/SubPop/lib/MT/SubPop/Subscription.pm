@@ -12,15 +12,18 @@ sub FOR_UNSUBSCRIBE { 3 }
 
 __PACKAGE__->install_properties({
     column_defs => {
+        id           => 'integer not null auto_increment',
         hub_url      => 'text',
         topic        => 'text',
         author_id    => 'integer',
         status       => 'integer',
         verify_token => 'string(75)',
         callback     => 'text',
+        info         => 'hash meta',
     },
     datasource  => 'subpop',
-    primary_key => 'verify_token',
+    primary_key => 'id',
+    meta        => 1,
 });
 
 sub class_label { 'SubPop Subscription' }
@@ -28,6 +31,7 @@ sub class_label { 'SubPop Subscription' }
 sub subscribe {
     my $self = shift;
     my ( %opts ) = @_;
+    my $info = delete $opts{info};
     if ( !ref $self ) {
         my @subs = __PACKAGE__->load({
             hub_url => $opts{hub_url},
@@ -46,6 +50,7 @@ sub subscribe {
                 my $clone = $subs[0]->clone;
                 $clone->author_id($opts{author_id});
                 $clone->callback($opts{callback});
+                $clone->info($info);
                 $clone->save;
                 return $clone;
             }
@@ -64,6 +69,7 @@ sub subscribe {
                 ) if !$val;
                 $self->$col($val);
             }
+            $self->info($info);
         }
     }
     if ( ( $self->status || 0 ) == ACTIVE() ) {
@@ -74,7 +80,7 @@ sub subscribe {
         );
     }
     $self->status( FOR_SUBSCRIBE() );
-    $self->verify_token( MT::SubPop::Util::generate_token() );
+    $self->verify_token( generate_token() );
     $self->save
         or die;
     $self->_request('subscribe');

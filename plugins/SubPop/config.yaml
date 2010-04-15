@@ -1,7 +1,7 @@
 name: SubPop
 id: SubPop
 version: 0.1
-schema_version: 0.13
+schema_version: 0.15
 applications:
     subpop:
         handler: MT::App::SubPop
