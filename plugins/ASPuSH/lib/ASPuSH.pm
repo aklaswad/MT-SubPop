@@ -23,6 +23,8 @@ sub find_hub_link_from_xml {
     my $hub = $x->findvalue( '//link[@rel="hub"]/@href' )
         or return;
     my $topic = $params{url};
+    my $author = $params{author}
+        or return;
     my $info = {
         foreach     => $params{foreach},
         get         => $params{get},
@@ -32,7 +34,7 @@ sub find_hub_link_from_xml {
 
     require MT::SubPop::Subscription;
     my $res = MT::SubPop::Subscription->subscribe(
-        author_id => MT->app->user->id,
+        author_id => $author->id,
         hub_url   => "$hub",
         topic     => "$topic",
         callback  => 'aspush',
@@ -67,12 +69,35 @@ sub update {
         }
     }
     return if !$items;
-    $event_class->build_results(
-        items   => $items,
-        stream  => $event_class->registry_entry,
-        author  => $author,
-        profile => $info,
-    );
+
+    eval {
+        $event_class->build_results(
+            items   => $items,
+            stream  => $event_class->registry_entry,
+            author  => $author,
+            profile => $info,
+        );
+    };
+    MT->log( "Error occured while building ActionStreams records: $@" ) if $@;
+
+    ## build index pages.
+    my $plugin = MT->component('ActionStreams');
+    my $pd_iter = MT->model('plugindata')->load_iter({
+        plugin => $plugin->key,
+        key => { like => 'configuration:blog:%' }
+    });
+
+    my %rebuild;
+    while ( my $pd = $pd_iter->() ) {
+        next unless $pd->data('rebuild_for_action_stream_events');
+        my ($blog_id) = $pd->key =~ m/:blog:(\d+)$/;
+        $rebuild{$blog_id} = 1;
+    }
+
+    for my $blog_id (keys %rebuild) {
+        my $blog = MT->model('blog')->load( $blog_id ) or next;
+        MT->publisher->rebuild_indexes( Blog => $blog );
+    }
 }
 
 1;
